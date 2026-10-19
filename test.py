@@ -47,10 +47,6 @@ from sklearn.metrics import (
 from sklearn.inspection import permutation_importance
 
 
-# ==========================================================
-# 1. CONFIGURATION
-# ==========================================================
-
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "reports"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -58,9 +54,6 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 sns.set_theme(style="whitegrid")
 
 
-# ==========================================================
-# 2. CHARGEMENT DES DATASETS
-# ==========================================================
 
 mat = pd.read_csv(BASE_DIR / "student-mat.csv", sep=";")
 por = pd.read_csv(BASE_DIR / "student-por.csv", sep=";")
@@ -70,17 +63,11 @@ por["subject"] = "portuguese"
 
 df = pd.concat([mat, por], ignore_index=True)
 
-print("\n========== DIMENSIONS ==========")
 print("Mathématiques :", mat.shape)
 print("Portugais      :", por.shape)
 print("Dataset total  :", df.shape)
 
 
-# ==========================================================
-# 3. ENREGISTREMENT DU DATASET COMBINE
-# ==========================================================
-
-# Utilise un autre nom pour éviter le conflit de permissions.
 dataset_path = OUTPUT_DIR / "student-all-combined.csv"
 
 df.to_csv(dataset_path, index=False, encoding="utf-8")
@@ -88,31 +75,20 @@ df.to_csv(dataset_path, index=False, encoding="utf-8")
 print(f"\nDataset combiné enregistré dans : {dataset_path}")
 
 
-# ==========================================================
-# 4. EXPLORATION GENERALE (EDA)
-# ==========================================================
-
-print("\n========== INFORMATIONS GENERALES ==========")
 df.info()
 
-print("\n========== VALEURS MANQUANTES ==========")
 missing = df.isna().sum()
 print(missing[missing > 0])
 print("Total des valeurs manquantes :", df.isna().sum().sum())
 
-print("\n========== DOUBLONS EXACTS ==========")
 print("Nombre de doublons :", df.duplicated().sum())
 
-print("\n========== STATISTIQUES DES VARIABLES NUMERIQUES ==========")
 print(df.describe())
 
-print("\n========== MODALITES DES VARIABLES CATEGORIELLES ==========")
 print(df.select_dtypes(include="object").nunique())
 
 
-# ==========================================================
-# 5. DISTRIBUTION DE LA NOTE FINALE G3
-# ==========================================================
+
 
 plt.figure(figsize=(9, 5))
 
@@ -133,17 +109,10 @@ plt.savefig(OUTPUT_DIR / "distribution_G3.png", dpi=300)
 plt.show()
 
 
-# ==========================================================
-# 6. CREATION DES VARIABLES CIBLES
-# ==========================================================
 
-# Classification binaire :
-# 0 = échec (G3 < 10)
-# 1 = réussite (G3 >= 10)
 
 df["pass"] = (df["G3"] >= 10).astype(int)
 
-print("\n========== REUSSITE / ECHEC ==========")
 print(df["pass"].value_counts().rename(index={
     0: "Echec",
     1: "Reussite"
@@ -156,10 +125,7 @@ print(df["pass"].value_counts(normalize=True).rename(index={
 }).round(3))
 
 
-# Classification en trois niveaux :
-# Faible : G3 de 0 à 9
-# Moyen  : G3 de 10 à 13
-# Bon    : G3 de 14 à 20
+
 
 df["level"] = pd.cut(
     df["G3"],
@@ -167,19 +133,12 @@ df["level"] = pd.cut(
     labels=["faible", "moyen", "bon"]
 )
 
-print("\n========== NIVEAUX DE PERFORMANCE ==========")
 print(df["level"].value_counts().sort_index())
 
 print("\nProportions :")
 print(df["level"].value_counts(normalize=True).sort_index().round(3))
 
 
-# ==========================================================
-# 7. MATRICE DE CORRELATION
-# ==========================================================
-
-# On retire les variables créées à partir de G3 afin de ne pas
-# les inclure dans cette matrice de corrélation.
 
 num = df.select_dtypes(include="number").drop(
     columns=["pass"],
@@ -205,9 +164,6 @@ plt.savefig(OUTPUT_DIR / "correlation_matrix.png", dpi=300)
 plt.show()
 
 
-# ==========================================================
-# 8. ANALYSE DES PROFILS D'ETUDIANTS
-# ==========================================================
 
 keys = [
     "school", "sex", "age", "address", "famsize", "Pstatus",
@@ -217,7 +173,6 @@ keys = [
 
 df["student_id"] = df.groupby(keys, dropna=False).ngroup()
 
-print("\n========== PROFILS D'ETUDIANTS ==========")
 print("Nombre de profils distincts :", df["student_id"].nunique())
 
 repeated_profiles = (
@@ -227,9 +182,7 @@ repeated_profiles = (
 print("Profils présents plusieurs fois :", repeated_profiles)
 
 
-# ==========================================================
-# 9. SAUVEGARDE DU RAPPORT DESCRIPTIF
-# ==========================================================
+
 
 report_path = OUTPUT_DIR / "eda_summary.txt"
 
@@ -261,7 +214,6 @@ with open(report_path, "w", encoding="utf-8") as file:
         + "\n"
     )
 
-print("\n========== FIN DE L'ANALYSE ==========")
 print("Graphiques et rapports enregistrés dans :", OUTPUT_DIR)
 print("Rapport descriptif :", report_path)
 # Vérifier les dimensions
@@ -493,7 +445,7 @@ for name, model in models.items():
 
     trained_models[name] = pipeline
 
-    print(f"\n========== {name} ==========")
+    print(f"\n{name} ")
     print(classification_report(
         y_test,
         y_pred,
@@ -506,7 +458,7 @@ results_df = pd.DataFrame(results).sort_values(
     ascending=False
 )
 
-print("\n========== COMPARAISON DES MODELES ==========")
+print("\nCOMPARAISON DES MODELES")
 print(results_df.round(3).to_string(index=False))
 
 results_df.to_csv(
@@ -619,8 +571,6 @@ print(classification_report(
 
 
 
-
-# Préparer les données de régression
 excluded_reg = [
     "G3", "pass", "level", "student_id"
 ]
